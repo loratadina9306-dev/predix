@@ -2,11 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@react-native-async-storage/async-storage": false,
+    };
     config.externals.push(
       "pino-pretty",
-      "lokijs", 
-      "encoding",
-      "@react-native-async-storage/async-storage"
+      "lokijs",
+      "encoding"
     );
     return config;
   },
