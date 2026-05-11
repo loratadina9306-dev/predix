@@ -11,7 +11,6 @@ import { formatUsdc, CATEGORIES } from "@/lib/config";
 import { format }            from "date-fns";
 import { es }                from "date-fns/locale";
 
-// One position row - loads positions for a single market
 function PositionRow({ market, userAddress }: { market: any; userAddress: `0x${string}` }) {
   const { positions, hasPosition, refetch } = useUserPositions(market.address, userAddress);
   const trade = useMarketTrade(market.address);
@@ -24,7 +23,6 @@ function PositionRow({ market, userAddress }: { market: any; userAddress: `0x${s
   const hasNo    = positions.sharesNO  > 0n;
   const curVal   = Number(positions.valueYES + positions.valueNO) / 1_000_000;
   const shares   = Number(positions.sharesYES + positions.sharesNO) / 1_000_000;
-  // Rough PnL: current value - shares bought (since 1 share costs ~priceYES USDC)
   const costBasis = hasYes
     ? Number(positions.sharesYES) / 1_000_000 * market.priceYES / 100
     : Number(positions.sharesNO) / 1_000_000 * market.priceNO / 100;
@@ -42,8 +40,8 @@ function PositionRow({ market, userAddress }: { market: any; userAddress: `0x${s
         <Link
           href={`/market/${market.address}`}
           style={{ display: "block" }}
-          onMouseEnter={e=>(e.currentTarget.querySelector(".pos-question")!.style.color="var(--green)")}
-          onMouseLeave={e=>(e.currentTarget.querySelector(".pos-question")!.style.color="")}
+          onMouseEnter={e=>{ const el = e.currentTarget.querySelector(".pos-question") as HTMLElement; if(el) el.style.color="var(--green)"; }}
+          onMouseLeave={e=>{ const el = e.currentTarget.querySelector(".pos-question") as HTMLElement; if(el) el.style.color=""; }}
         >
           <div style={{ fontSize: "9px", letterSpacing: "1.5px", color: cat.color, marginBottom: "4px" }}>
             {cat.emoji} {cat.label.toUpperCase()}
@@ -70,11 +68,7 @@ function PositionRow({ market, userAddress }: { market: any; userAddress: `0x${s
       </td>
       <td>
         {isResolved ? (
-          <button
-            className="btn-redeem"
-            onClick={handleRedeem}
-            disabled={trade.isLoading}
-          >
+          <button className="btn-redeem" onClick={handleRedeem} disabled={trade.isLoading}>
             {trade.isLoading ? "..." : "COBRAR →"}
           </button>
         ) : (
@@ -89,8 +83,6 @@ function PositionRow({ market, userAddress }: { market: any; userAddress: `0x${s
     </tr>
   );
 }
-
-// ─── Main Portfolio Page ──────────────────────────────
 
 export default function PortfolioPage() {
   const { address, isConnected } = useAccount();
@@ -110,13 +102,10 @@ export default function PortfolioPage() {
     );
   }
 
-  const shortAddr = address
-    ? `${address.slice(0, 6)}...${address.slice(-4)}`
-    : "";
+  const shortAddr = address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "";
 
   return (
     <>
-      {/* Header */}
       <div className="section-head">
         <span className="section-title">// Portfolio</span>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text3)" }}>
@@ -125,8 +114,6 @@ export default function PortfolioPage() {
       </div>
 
       <div className="portfolio-grid">
-
-        {/* SIDEBAR */}
         <div className="portfolio-sidebar">
           <div className="wallet-label">WALLET</div>
           <div className="wallet-display">
@@ -135,11 +122,10 @@ export default function PortfolioPage() {
             </div>
           </div>
 
-          {/* Stats */}
           {[
-            { label: "Red",        val: "Polygon"  },
-            { label: "Colateral",  val: "USDC"     },
-            { label: "Fee",        val: "2%"        },
+            { label: "Red",       val: "Polygon" },
+            { label: "Colateral", val: "USDC"    },
+            { label: "Fee",       val: "2%"       },
           ].map(s => (
             <div key={s.label} className="balance-row">
               <span className="balance-label">{s.label}</span>
@@ -149,18 +135,12 @@ export default function PortfolioPage() {
 
           <div className="divider" />
 
-          {/* Links */}
-          <a
-            href={`https://polygonscan.com/address/${address}`}
-            target="_blank" rel="noopener"
-            style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", letterSpacing: "1px", color: "var(--text3)", padding: "8px", border: "1px solid var(--border)", marginBottom: "6px" }}
-          >
+          <a href={`https://polygonscan.com/address/${address}`} target="_blank" rel="noopener"
+            style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", letterSpacing: "1px", color: "var(--text3)", padding: "8px", border: "1px solid var(--border)", marginBottom: "6px" }}>
             VER EN POLYGONSCAN <span>→</span>
           </a>
-          <Link
-            href="/"
-            style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", letterSpacing: "1px", color: "var(--text3)", padding: "8px", border: "1px solid var(--border)" }}
-          >
+          <Link href="/"
+            style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", letterSpacing: "1px", color: "var(--text3)", padding: "8px", border: "1px solid var(--border)" }}>
             EXPLORAR MERCADOS <span>→</span>
           </Link>
 
@@ -173,7 +153,6 @@ export default function PortfolioPage() {
           </div>
         </div>
 
-        {/* MAIN TABLE */}
         <div className="portfolio-main">
           {isLoading ? (
             <div style={{ padding: "40px", textAlign: "center", color: "var(--text3)" }}>
@@ -193,11 +172,7 @@ export default function PortfolioPage() {
               </thead>
               <tbody>
                 {markets.map(m => (
-                  <PositionRow
-                    key={m.address}
-                    market={m}
-                    userAddress={address!}
-                  />
+                  <PositionRow key={m.address} market={m} userAddress={address!} />
                 ))}
               </tbody>
             </table>
@@ -206,8 +181,7 @@ export default function PortfolioPage() {
           {!isLoading && markets.length === 0 && (
             <div className="empty">
               <div style={{ marginBottom: "12px" }}>SIN POSICIONES ACTIVAS</div>
-              <Link href="/"
-                style={{ fontSize: "11px", color: "var(--green)", letterSpacing: "1.5px" }}>
+              <Link href="/" style={{ fontSize: "11px", color: "var(--green)", letterSpacing: "1.5px" }}>
                 EXPLORAR MERCADOS →
               </Link>
             </div>
