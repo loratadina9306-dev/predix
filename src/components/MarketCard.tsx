@@ -1,25 +1,33 @@
 "use client";
 // src/components/MarketCard.tsx
 
-import { useState }        from "react";
-import Link                from "next/link";
-import { useAccount }      from "wagmi";
-import { ConnectButton }   from "@rainbow-me/rainbowkit";
+import { useState } from "react";
+import Link from "next/link";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import type { MarketData } from "@/hooks/useMarkets";
-import { useMarketTrade }  from "@/hooks/useMarketTrade";
-import { CATEGORIES }      from "@/lib/config";
+import { useMarketTrade } from "@/hooks/useMarketTrade";
+import { CATEGORIES } from "@/lib/config";
 import { formatDistanceToNow } from "date-fns";
-import { es }              from "date-fns/locale";
+import { es } from "date-fns/locale";
+
+const CAT_COLORS: Record<string, string> = {
+  futbol:   "var(--yes)",
+  politica: "#ff7740",
+  economia: "var(--gold)",
+  cultura:  "var(--purple)",
+};
 
 type Props = { market: MarketData; onTradeComplete?: () => void };
 
 export function MarketCard({ market, onTradeComplete }: Props) {
-  const { address }        = useAccount();
-  const [open, setOpen]    = useState(false);
-  const [isYes, setIsYes]  = useState(true);
-  const [amt,   setAmt]    = useState("");
-  const trade              = useMarketTrade(market.address);
-  const cat                = CATEGORIES[market.category] || { label: market.category, emoji: "📊", color: "#888" };
+  const { address }       = useAccount();
+  const [open, setOpen]   = useState(false);
+  const [isYes, setIsYes] = useState(true);
+  const [amt, setAmt]     = useState("");
+  const trade             = useMarketTrade(market.address);
+  const cat               = CATEGORIES[market.category] || { label: market.category, emoji: "📊", color: "#888" };
+  const catColor          = CAT_COLORS[market.category] || "#888";
 
   const isClosed   = Date.now() / 1000 > market.closesAt;
   const isResolved = market.state === 2;
@@ -27,7 +35,14 @@ export function MarketCard({ market, onTradeComplete }: Props) {
 
   const closesText = isClosed
     ? "Cerrado"
-    : `${formatDistanceToNow(market.closesAt * 1000, { locale: es, addSuffix: true })}`;
+    : formatDistanceToNow(market.closesAt * 1000, { locale: es, addSuffix: true });
+
+  const expectedShares = amt && Number(amt) > 0
+    ? (Number(amt) / (isYes ? market.priceYES : market.priceNO) * 100).toFixed(2)
+    : "0";
+  const potentialProfit = amt && Number(amt) > 0
+    ? ((Number(amt) / (isYes ? market.priceYES : market.priceNO) * 100) - Number(amt)).toFixed(2)
+    : "0";
 
   async function handleBuy(e: React.MouseEvent) {
     e.stopPropagation();
@@ -41,90 +56,141 @@ export function MarketCard({ market, onTradeComplete }: Props) {
 
   return (
     <div className="mcard">
+      {/* Category & time */}
       <div className="mcard-cat">
-        <span className="cat-pip" style={{ background: cat.color }} />
-        {cat.emoji} {cat.label.toUpperCase()} · {closesText}
+        <span className="mcard-cat-dot" style={{ background: catColor }} />
+        <span className="mcard-cat-text">{cat.emoji} {cat.label}</span>
+        <span className="mcard-cat-sep" />
+        <span className="mcard-cat-time">{closesText}</span>
       </div>
 
+      {/* Question */}
       <Link href={`/market/${market.address}`}>
-        <p className="mcard-q"
-          onMouseEnter={e => (e.currentTarget.style.color = "var(--green)")}
-          onMouseLeave={e => (e.currentTarget.style.color = "")}
-        >{market.question}</p>
+        <p className="mcard-q">{market.question}</p>
       </Link>
 
-      <div className="prob-wrap">
-        <div className="prob-nums">
+      {/* Probability */}
+      <div className="mcard-prob">
+        <div className="mcard-prob-nums">
           <div>
-            <span style={{ fontSize: "9px", letterSpacing: "1.5px", color: "var(--text3)", display: "block", marginBottom: "2px" }}>SÍ</span>
-            <span className="prob-yes-val">{market.priceYES}%</span>
+            <div className="prob-yes-label">SÍ</div>
+            <div className="prob-yes-big">{market.priceYES}%</div>
           </div>
-          <div style={{ textAlign: "right" }}>
-            <span style={{ fontSize: "9px", letterSpacing: "1.5px", color: "var(--text3)", display: "block", marginBottom: "2px" }}>NO</span>
-            <span className="prob-no-val">{market.priceNO}%</span>
+          <div>
+            <div className="prob-no-label">NO</div>
+            <div className="prob-no-big">{market.priceNO}%</div>
           </div>
         </div>
-        <div className="prob-bar-track">
-          <div className="prob-bar-fill" style={{ width: `${market.priceYES}%` }} />
+        <div className="prob-track">
+          <div className="prob-fill" style={{ width: `${market.priceYES}%` }} />
         </div>
       </div>
 
+      {/* Meta */}
       <div className="mcard-meta">
-        <span>Vol: <span className="vol-val">${market.totalUSDC}</span> USDC</span>
-        <Link href={`/market/${market.address}`}
-          style={{ fontSize: "9px", letterSpacing: "1px", color: "var(--text3)" }}
-          onMouseEnter={e=>(e.currentTarget.style.color="var(--green)")}
-          onMouseLeave={e=>(e.currentTarget.style.color="var(--text3)")}
-        >DETALLE →</Link>
+        <span className="mcard-vol">
+          Vol: <strong>${market.totalUSDC}</strong> USDC
+        </span>
+        <Link href={`/market/${market.address}`} className="mcard-link">
+          VER DETALLE →
+        </Link>
       </div>
 
+      {/* Resolved */}
       {isResolved && (
-        <div className={`resolved-badge ${market.outcome === 1 ? "yes" : "no"}`}>
+        <div className={`resolved-chip ${market.outcome === 1 ? "yes" : "no"}`}>
           {market.outcome === 1 ? "✓ RESULTADO: SÍ" : market.outcome === 2 ? "✗ RESULTADO: NO" : "⚠ INVÁLIDO"}
         </div>
       )}
 
+      {/* Trade buttons */}
       {isOpen && !open && (
-        <div className="trade-btns">
-          <button className="btn-yes" onClick={() => { setIsYes(true);  setOpen(true); }}>SÍ · {market.priceYES}¢</button>
-          <button className="btn-no"  onClick={() => { setIsYes(false); setOpen(true); }}>NO · {market.priceNO}¢</button>
+        <div className="trade-row">
+          <button className="btn-yes" onClick={() => { setIsYes(true);  setOpen(true); }}>
+            SÍ · {market.priceYES}¢
+          </button>
+          <button className="btn-no"  onClick={() => { setIsYes(false); setOpen(true); }}>
+            NO · {market.priceNO}¢
+          </button>
         </div>
       )}
 
+      {/* Trade panel */}
       {isOpen && open && (
         <div className="trade-panel" onClick={e => e.stopPropagation()}>
-          <div className="dir-toggle">
-            <button className={`dir-btn yes ${isYes ? "on" : ""}`}  onClick={() => setIsYes(true)}>✓ SÍ · {market.priceYES}¢</button>
-            <button className={`dir-btn no  ${!isYes ? "on" : ""}`} onClick={() => setIsYes(false)}>✗ NO · {market.priceNO}¢</button>
+
+          {/* Direction */}
+          <div className="dir-grid">
+            <button className={`dir-btn yes ${isYes ? "selected" : ""}`}
+              onClick={() => setIsYes(true)}>
+              ✓ SÍ · {market.priceYES}¢
+            </button>
+            <button className={`dir-btn no ${!isYes ? "selected" : ""}`}
+              onClick={() => setIsYes(false)}>
+              ✗ NO · {market.priceNO}¢
+            </button>
           </div>
-          <div className="amount-field">
-            <input className="amount-input" type="number" placeholder="0.00"
-              value={amt} onChange={e => setAmt(e.target.value)} min="0.1" step="1" />
+
+          {/* Amount */}
+          <div className="amount-wrap">
+            <input className="amount-input" type="number"
+              placeholder="0.00" value={amt}
+              onChange={e => setAmt(e.target.value)}
+              min="0.1" step="1" />
             <span className="amount-unit">USDC</span>
           </div>
+
+          {/* Presets */}
           <div className="presets">
             {["5","20","50","100"].map(v => (
-              <button key={v} className="preset" onClick={() => setAmt(v)}>${v}</button>
+              <button key={v} className="preset-btn" onClick={() => setAmt(v)}>${v}</button>
             ))}
           </div>
+
+          {/* Quote */}
           {amt && Number(amt) > 0 && (
             <div className="quote-box">
-              Shares: <strong>{(Number(amt) / (isYes ? market.priceYES : market.priceNO) * 100).toFixed(2)}</strong><br/>
-              Retorno: <strong>+${((Number(amt) / (isYes ? market.priceYES : market.priceNO) * 100) - Number(amt)).toFixed(2)} USDC</strong>
+              Shares: <strong>{expectedShares}</strong><br/>
+              Retorno si aciertas: <strong>+${potentialProfit} USDC</strong>
             </div>
           )}
-          {trade.status === "approving" && <p className="status-line pending">⏳ Aprobando USDC... (1/2)</p>}
-          {trade.status === "trading"   && <p className="status-line pending">⏳ Confirmando... (2/2)</p>}
-          {trade.status === "success"   && <p className="status-line success">✓ Confirmado · <a href={`https://polygonscan.com/tx/${trade.txHash}`} target="_blank" style={{color:"var(--green)"}}>Ver tx →</a></p>}
-          {trade.error                  && <p className="status-line error">✗ {trade.error}</p>}
+
+          {/* Status messages */}
+          {trade.status === "approving" && (
+            <p className="status-msg pending">⏳ Aprobando USDC... (1/2)</p>
+          )}
+          {trade.status === "trading" && (
+            <p className="status-msg pending">⏳ Confirmando en Polygon... (2/2)</p>
+          )}
+          {trade.status === "success" && (
+            <p className="status-msg ok">
+              ✓ ¡Confirmado!{" "}
+              <a href={`https://polygonscan.com/tx/${trade.txHash}`}
+                target="_blank" rel="noopener"
+                style={{ color: "var(--yes)" }}>
+                Ver tx →
+              </a>
+            </p>
+          )}
+          {trade.error && <p className="status-msg err">✗ {trade.error}</p>}
+
+          {/* Action */}
           {!address ? (
-            <div style={{ marginTop: "8px" }}><ConnectButton label="Conectar para apostar" /></div>
+            <div style={{ marginTop: "8px" }}>
+              <ConnectButton label="Conectar para apostar" />
+            </div>
           ) : (
-            <button className="btn-confirm" onClick={handleBuy} disabled={trade.isLoading || !amt || Number(amt) <= 0}>
+            <button className="btn-confirm"
+              onClick={handleBuy}
+              disabled={trade.isLoading || !amt || Number(amt) <= 0}>
               {trade.isLoading ? "PROCESANDO..." : `APOSTAR ${isYes ? "SÍ" : "NO"}`}
             </button>
           )}
-          <button className="btn-cancel" onClick={() => { setOpen(false); trade.reset(); }}>CANCELAR ✕</button>
+
+          <button className="btn-cancel"
+            onClick={() => { setOpen(false); trade.reset(); }}>
+            CANCELAR ✕
+          </button>
         </div>
       )}
     </div>
