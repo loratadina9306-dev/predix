@@ -2,26 +2,21 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { polygon, polygonMumbai } from "wagmi/chains";
 
-// ─── Chains ───────────────────────────────────────────
 export const config = getDefaultConfig({
-  appName: "Pronósticos.MX",
+  appName:   "Pronósticos",
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_ID!,
-  chains: [polygon, polygonMumbai],
-  ssr: true,
+  chains:    [polygon, polygonMumbai],
+  ssr:       true,
 });
 
-// ─── Contract Addresses ───────────────────────────────
 export const CONTRACTS = {
-  // Mercado desplegado en Polygon Mainnet
   MARKET:   (process.env.NEXT_PUBLIC_MARKET_ADDRESS   || "0x428bC1bB9F9C5B161ea72dC9d734e5498DcbC339") as `0x${string}`,
   FACTORY:  (process.env.NEXT_PUBLIC_FACTORY_ADDRESS  || "0x0000000000000000000000000000000000000000") as `0x${string}`,
   RESOLVER: (process.env.NEXT_PUBLIC_RESOLVER_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`,
   USDC:     (process.env.NEXT_PUBLIC_USDC_ADDRESS     || "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174") as `0x${string}`,
 };
 
-// ─── ABIs ─────────────────────────────────────────────
 export const MARKET_ABI = [
-  // Read
   { name: "question",    type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
   { name: "category",   type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "string" }] },
   { name: "closesAt",   type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
@@ -32,9 +27,7 @@ export const MARKET_ABI = [
   { name: "priceNO",    type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   { name: "totalUSDC",  type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "uint256" }] },
   {
-    name: "getMarketInfo",
-    type: "function", stateMutability: "view",
-    inputs: [],
+    name: "getMarketInfo", type: "function", stateMutability: "view", inputs: [],
     outputs: [
       { name: "_question",  type: "string"  },
       { name: "_category",  type: "string"  },
@@ -48,8 +41,7 @@ export const MARKET_ABI = [
     ]
   },
   {
-    name: "getUserPositions",
-    type: "function", stateMutability: "view",
+    name: "getUserPositions", type: "function", stateMutability: "view",
     inputs: [{ name: "user", type: "address" }],
     outputs: [
       { name: "_sharesYES", type: "uint256" },
@@ -59,113 +51,48 @@ export const MARKET_ABI = [
     ]
   },
   {
-    name: "quoteBuy",
-    type: "function", stateMutability: "view",
-    inputs: [
-      { name: "isYes",      type: "bool"    },
-      { name: "usdcAmount", type: "uint256" },
-    ],
-    outputs: [
-      { name: "sharesOut",     type: "uint256" },
-      { name: "pricePerShare", type: "uint256" },
-    ]
-  },
-  // Write
-  {
-    name: "buy",
-    type: "function", stateMutability: "nonpayable",
-    inputs: [
-      { name: "isYes",      type: "bool"    },
-      { name: "usdcAmount", type: "uint256" },
-      { name: "minShares",  type: "uint256" },
-    ],
-    outputs: []
+    name: "quoteBuy", type: "function", stateMutability: "view",
+    inputs: [{ name: "isYes", type: "bool" }, { name: "usdcAmount", type: "uint256" }],
+    outputs: [{ name: "sharesOut", type: "uint256" }, { name: "pricePerShare", type: "uint256" }]
   },
   {
-    name: "sell",
-    type: "function", stateMutability: "nonpayable",
+    name: "buy", type: "function", stateMutability: "nonpayable",
+    inputs: [
+      { name: "isYes",     type: "bool"    },
+      { name: "usdcAmount",type: "uint256" },
+      { name: "minShares", type: "uint256" },
+    ], outputs: []
+  },
+  {
+    name: "sell", type: "function", stateMutability: "nonpayable",
     inputs: [
       { name: "isYes",       type: "bool"    },
       { name: "sharesAmount",type: "uint256" },
       { name: "minUsdc",     type: "uint256" },
-    ],
-    outputs: []
+    ], outputs: []
   },
-  {
-    name: "redeem",
-    type: "function", stateMutability: "nonpayable",
-    inputs: [], outputs: []
-  },
-  // Events
-  {
-    name: "SharesBought",
-    type: "event",
-    inputs: [
-      { name: "user",      type: "address", indexed: true },
-      { name: "isYes",     type: "bool",    indexed: false },
-      { name: "usdcIn",    type: "uint256", indexed: false },
-      { name: "sharesOut", type: "uint256", indexed: false },
-    ]
-  },
-] as const;
-
-export const FACTORY_ABI = [
-  {
-    name: "getAllMarkets",
-    type: "function", stateMutability: "view",
-    inputs: [], outputs: [{ type: "address[]" }]
-  },
-  {
-    name: "getAllMarketData",
-    type: "function", stateMutability: "view",
-    inputs: [],
-    outputs: [
-      { name: "markets",    type: "address[]" },
-      { name: "questions",  type: "string[]"  },
-      { name: "categories", type: "string[]"  },
-      { name: "pricesYES",  type: "uint256[]" },
-      { name: "totalUSDCs", type: "uint256[]" },
-      { name: "states",     type: "uint8[]"   },
-    ]
-  },
-  {
-    name: "MarketCreated",
-    type: "event",
-    inputs: [
-      { name: "market",           type: "address", indexed: true },
-      { name: "question",         type: "string",  indexed: false },
-      { name: "category",         type: "string",  indexed: false },
-      { name: "closesAt",         type: "uint256", indexed: false },
-      { name: "resolvesAt",       type: "uint256", indexed: false },
-      { name: "initialLiquidity", type: "uint256", indexed: false },
-    ]
-  },
+  { name: "redeem", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
 ] as const;
 
 export const ERC20_ABI = [
   {
-    name: "approve",
-    type: "function", stateMutability: "nonpayable",
+    name: "approve", type: "function", stateMutability: "nonpayable",
     inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }],
     outputs: [{ type: "bool" }]
   },
   {
-    name: "allowance",
-    type: "function", stateMutability: "view",
+    name: "allowance", type: "function", stateMutability: "view",
     inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }],
     outputs: [{ type: "uint256" }]
   },
   {
-    name: "balanceOf",
-    type: "function", stateMutability: "view",
+    name: "balanceOf", type: "function", stateMutability: "view",
     inputs: [{ name: "account", type: "address" }],
     outputs: [{ type: "uint256" }]
   },
 ] as const;
 
-// ─── Helpers ─────────────────────────────────────────
-export const USDC_DECIMALS = 6;
-export const PRECISION = 1_000_000n;
+export const PRECISION = BigInt(1_000_000);
 
 export function formatUsdc(raw: bigint): string {
   const whole = raw / PRECISION;
@@ -175,16 +102,12 @@ export function formatUsdc(raw: bigint): string {
 
 export function parseUsdc(amount: string): bigint {
   const [w, f = ""] = amount.split(".");
-  return BigInt(w) * PRECISION + BigInt(f.slice(0, 6).padEnd(6, "0"));
-}
-
-export function toPercent(price: bigint): number {
-  return Number(price) / 10000; // price is 6 decimals, return 0-100
+  return BigInt(w || "0") * PRECISION + BigInt(f.slice(0, 6).padEnd(6, "0"));
 }
 
 export const CATEGORIES: Record<string, { label: string; emoji: string; color: string }> = {
-  futbol:   { label: "Fútbol",   emoji: "⚽", color: "#00C27C" },
-  politica: { label: "Política", emoji: "🗳️", color: "#FF6B35" },
-  economia: { label: "Economía", emoji: "💸", color: "#F5C842" },
-  cultura:  { label: "Cultura",  emoji: "🎭", color: "#B47FFF" },
+  futbol:   { label: "Fútbol",   emoji: "⚽", color: "var(--yes)" },
+  politica: { label: "Política", emoji: "🗳️", color: "#ff7740"   },
+  economia: { label: "Economía", emoji: "💸", color: "var(--gold)"},
+  cultura:  { label: "Cultura",  emoji: "🎭", color: "var(--purple)" },
 };
